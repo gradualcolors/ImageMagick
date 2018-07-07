@@ -169,7 +169,6 @@ static size_t
   max_memory_request = 0,
   virtual_anonymous_memory = 0;
 
-#if defined _MSC_VER
 static void* MSCMalloc(size_t size)
 {
   return malloc(size);
@@ -182,20 +181,13 @@ static void MSCFree(void* ptr)
 {
   free(ptr);
 }
-#endif
 
 static MagickMemoryMethods
   memory_methods =
   {
-#if defined _MSC_VER
-    (AcquireMemoryHandler) MSCMalloc,
-    (ResizeMemoryHandler) MSCRealloc,
-    (DestroyMemoryHandler) MSCFree
-#else
-    (AcquireMemoryHandler) malloc,
-    (ResizeMemoryHandler) realloc,
-    (DestroyMemoryHandler) free
-#endif
+    MSCMalloc,
+    MSCRealloc,
+    MSCFree
   };
 #if defined(MAGICKCORE_ANONYMOUS_MEMORY_SUPPORT)
 static MemoryPool
