@@ -40,15 +40,15 @@ extern "C" {
     MagickMax(MagickMin(GetMagickResourceLimit(ThreadResource),2),1) : \
     MagickMax(MagickMin((ssize_t) GetMagickResourceLimit(ThreadResource),(ssize_t) (chunk)/64),1))
 
-#if defined(__clang__) || (__GNUC__ > 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ > 10))
-#define MagickCachePrefetch(address,mode,locality) \
-  __builtin_prefetch(address,mode,locality)
-#else
+//#if defined(__clang__) || (__GNUC__ > 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ > 10))
+//#define MagickCachePrefetch(address,mode,locality) \
+//  __builtin_prefetch(address,mode,locality)
+//#else
 #define MagickCachePrefetch(address,mode,locality) \
   magick_unreferenced(address); \
   magick_unreferenced(mode); \
   magick_unreferenced(locality);
-#endif
+//#endif
 
 #if defined(MAGICKCORE_THREAD_SUPPORT)
   typedef pthread_mutex_t MagickMutexType;
