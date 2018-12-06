@@ -2074,13 +2074,13 @@ if test "$with_freetype" != 'yes'; then
     DISTCHECK_CONFIG_FLAGS="${DISTCHECK_CONFIG_FLAGS} --with-freetype=$with_freetype "
 fi
 
-have_freetype='no'
+have_freetype='yes'
 FREETYPE_CFLAGS=""
 FREETYPE_LIBS=""
 FREETYPE_PKG=""
 if test "x$with_freetype" = "xyes"; then
   AC_MSG_RESULT([-------------------------------------------------------------])
-  PKG_CHECK_MODULES(FREETYPE,[freetype2], have_freetype=yes, have_freetype=no)
+  # PKG_CHECK_MODULES(FREETYPE,[freetype2], have_freetype=yes, have_freetype=no)
   AC_MSG_RESULT([])
 fi
 
