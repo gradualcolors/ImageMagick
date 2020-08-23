@@ -426,14 +426,10 @@ static void InterpolateCLAHE(const RectangleInfo *clahe_info,const size_t *Q12,
     for (x=(ssize_t) tile->width; x > 0; x--)
     {
       intensity=lut[*pixels];
-       for (x=(ssize_t) tile->width; x > 0; x--)
-      {
-        intensity=lut[*pixels];
-        double a=PerceptibleReciprocal((double) tile->width*tile->height);
-        double b=(x*Q12[intensity]+(tile->width-x)*Q22[intensity]);
-        double c=(x*Q11[intensity]+(tile->width-x)*Q21[intensity]);
-        *pixels++=(unsigned short ) (a*(y*b+(tile->height-y)*c));
-      }
+      double a=PerceptibleReciprocal((double) tile->width*tile->height);
+      double b=(x*Q12[intensity]+(tile->width-x)*Q22[intensity]);
+      double c=(x*Q11[intensity]+(tile->width-x)*Q21[intensity]);
+      *pixels++=(unsigned short ) (a*(y*b+(tile->height-y)*c));
     }
     pixels+=(clahe_info->width-tile->width);
   }
