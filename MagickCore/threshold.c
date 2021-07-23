@@ -17,13 +17,13 @@
 %                                 October 1996                                %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
 %  obtain a copy of the License at                                            %
 %                                                                             %
-%    https://www.imagemagick.org/script/license.php                           %
+%    https://imagemagick.org/script/license.php                               %
 %                                                                             %
 %  Unless required by applicable law or agreed to in writing, software        %
 %  distributed under the License is distributed on an "AS IS" BASIS,          %
@@ -133,6 +133,43 @@ static const char
     "       2 1"
     "    </levels>"
     "  </threshold>"
+    " <threshold map=\"o2x2\" alias=\"2x2\">"
+    "   <description>Ordered 2x2 (dispersed)</description>"
+    "   <levels width=\"2\" height=\"2\" divisor=\"5\">"
+    "      1  3"
+    "      4  2"
+    "   </levels>"
+    " </threshold>"
+    " <threshold map=\"o3x3\" alias=\"3x3\">"
+    "   <description>Ordered 3x3 (dispersed)</description>"
+    "   <levels width=\"3\" height=\"3\" divisor=\"10\">"
+    "       3  7  4"
+    "       6  1  9"
+    "       2  8  5"
+    "   </levels>"
+    " </threshold>"
+    " <threshold map=\"o4x4\" alias=\"4x4\">"
+    "   <description>Ordered 4x4 (dispersed)</description>"
+    "   <levels width=\"4\" height=\"4\" divisor=\"17\">"
+    "      1   9   3  11"
+    "     13   5  15   7"
+    "      4  12   2  10"
+    "     16   8  14   6"
+    "   </levels>"
+    " </threshold>"
+    " <threshold map=\"o8x8\" alias=\"8x8\">"
+    "   <description>Ordered 8x8 (dispersed)</description>"
+    "   <levels width=\"8\" height=\"8\" divisor=\"65\">"
+    "        1  49  13  61   4  52  16  64"
+    "       33  17  45  29  36  20  48  32"
+    "        9  57   5  53  12  60   8  56"
+    "       41  25  37  21  44  28  40  24"
+    "        3  51  15  63   2  50  14  62"
+    "       35  19  47  31  34  18  46  30"
+    "       11  59   7  55  10  58   6  54"
+    "       43  27  39  23  42  26  38  22"
+    "   </levels>"
+    " </threshold>"
     "</thresholds>";
 
 /*
@@ -209,8 +246,7 @@ MagickExport Image *AdaptiveThresholdImage(const Image *image,
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
-  threshold_image=CloneImage(image,0,0,MagickTrue,
-    exception);
+  threshold_image=CloneImage(image,0,0,MagickTrue,exception);
   if (threshold_image == (Image *) NULL)
     return((Image *) NULL);
   status=SetImageStorageClass(threshold_image,DirectClass,exception);
@@ -339,9 +375,10 @@ MagickExport Image *AdaptiveThresholdImage(const Image *image,
           proceed;
 
 #if defined(MAGICKCORE_OPENMP_SUPPORT)
-        #pragma omp critical (MagickCore_AdaptiveThresholdImage)
+        #pragma omp atomic
 #endif
-        proceed=SetImageProgress(image,AdaptiveThresholdImageTag,progress++,
+        progress++;
+        proceed=SetImageProgress(image,AdaptiveThresholdImageTag,progress,
           image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
@@ -563,7 +600,7 @@ static double OTSUThreshold(const Image *image,const double *histogram,
   return(100.0*threshold/MaxIntensity);
 }
 
-static double TriangleThreshold(const Image *image,const double *histogram,
+static double TriangleThreshold(const double *histogram,
   ExceptionInfo *exception)
 {
   double
@@ -740,7 +777,7 @@ MagickExport MagickBooleanType AutoThresholdImage(Image *image,
     }
     case TriangleThresholdMethod:
     {
-      threshold=TriangleThreshold(image,histogram,exception);
+      threshold=TriangleThreshold(histogram,exception);
       break;
     }
   }
@@ -878,8 +915,9 @@ MagickExport MagickBooleanType BilevelImage(Image *image,const double threshold,
           proceed;
 
 #if defined(MAGICKCORE_OPENMP_SUPPORT)
-        #pragma omp critical (MagickCore_BilevelImage)
+        #pragma omp atomic
 #endif
+        progress++;
         proceed=SetImageProgress(image,ThresholdImageTag,progress++,
           image->rows);
         if (proceed == MagickFalse)
@@ -1039,9 +1077,10 @@ MagickExport MagickBooleanType BlackThresholdImage(Image *image,
           proceed;
 
 #if defined(MAGICKCORE_OPENMP_SUPPORT)
-        #pragma omp critical (MagickCore_BlackThresholdImage)
+        #pragma omp atomic
 #endif
-        proceed=SetImageProgress(image,ThresholdImageTag,progress++,
+        progress++;
+        proceed=SetImageProgress(image,ThresholdImageTag,progress,
           image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
@@ -1166,9 +1205,10 @@ MagickExport MagickBooleanType ClampImage(Image *image,ExceptionInfo *exception)
           proceed;
 
 #if defined(MAGICKCORE_OPENMP_SUPPORT)
-        #pragma omp critical (MagickCore_ClampImage)
+        #pragma omp atomic
 #endif
-        proceed=SetImageProgress(image,ClampImageTag,progress++,image->rows);
+        progress++;
+        proceed=SetImageProgress(image,ClampImageTag,progress,image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
       }
@@ -1815,9 +1855,10 @@ MagickExport MagickBooleanType OrderedDitherImage(Image *image,
           proceed;
 
 #if defined(MAGICKCORE_OPENMP_SUPPORT)
-        #pragma omp critical (MagickCore_OrderedDitherImage)
+        #pragma omp atomic
 #endif
-        proceed=SetImageProgress(image,DitherImageTag,progress++,image->rows);
+        progress++;
+        proceed=SetImageProgress(image,DitherImageTag,progress,image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
       }
@@ -1962,9 +2003,11 @@ MagickExport MagickBooleanType PerceptibleImage(Image *image,
           proceed;
 
 #if defined(MAGICKCORE_OPENMP_SUPPORT)
-        #pragma omp critical (MagickCore_PerceptibleImage)
+        #pragma omp atomic
 #endif
-        proceed=SetImageProgress(image,PerceptibleImageTag,progress++,image->rows);
+        progress++;
+        proceed=SetImageProgress(image,PerceptibleImageTag,progress,
+          image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
       }
@@ -2105,9 +2148,10 @@ MagickExport MagickBooleanType RandomThresholdImage(Image *image,
           proceed;
 
 #if defined(MAGICKCORE_OPENMP_SUPPORT)
-        #pragma omp critical (MagickCore_RandomThresholdImage)
+        #pragma omp atomic
 #endif
-        proceed=SetImageProgress(image,ThresholdImageTag,progress++,
+        progress++;
+        proceed=SetImageProgress(image,ThresholdImageTag,progress,
           image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
@@ -2250,9 +2294,10 @@ MagickExport MagickBooleanType RangeThresholdImage(Image *image,
           proceed;
 
 #if defined(MAGICKCORE_OPENMP_SUPPORT)
-        #pragma omp critical (MagickCore_RangeThresholdImage)
+        #pragma omp atomic
 #endif
-        proceed=SetImageProgress(image,ThresholdImageTag,progress++,
+        progress++;
+        proceed=SetImageProgress(image,ThresholdImageTag,progress,
           image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
@@ -2411,10 +2456,10 @@ MagickExport MagickBooleanType WhiteThresholdImage(Image *image,
           proceed;
 
 #if defined(MAGICKCORE_OPENMP_SUPPORT)
-        #pragma omp critical (MagickCore_WhiteThresholdImage)
+        #pragma omp atomic
 #endif
-        proceed=SetImageProgress(image,ThresholdImageTag,progress++,
-          image->rows);
+        progress++;
+        proceed=SetImageProgress(image,ThresholdImageTag,progress,image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
       }
