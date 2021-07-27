@@ -17,13 +17,13 @@
 %                                 July 1992                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
 %  obtain a copy of the License at                                            %
 %                                                                             %
-%    https://www.imagemagick.org/script/license.php                           %
+%    https://imagemagick.org/script/license.php                               %
 %                                                                             %
 %  Unless required by applicable law or agreed to in writing, software        %
 %  distributed under the License is distributed on an "AS IS" BASIS,          %
@@ -179,6 +179,8 @@ static void *AcquireCompressionMemory(void *context,const size_t items,
 #endif
 
 #if defined(MAGICKCORE_BZLIB_DELEGATE)
+static void *AcquireBZIPMemory(void *,int,int) magick_attribute((__malloc__));
+
 static void *AcquireBZIPMemory(void *context,int items,int size)
 {
   return(AcquireCompressionMemory(context,(size_t) items,(size_t) size));
@@ -186,6 +188,9 @@ static void *AcquireBZIPMemory(void *context,int items,int size)
 #endif
 
 #if defined(MAGICKCORE_LZMA_DELEGATE)
+static void *AcquireLZMAMemory(void *,size_t,size_t)
+  magick_attribute((__malloc__));
+
 static void *AcquireLZMAMemory(void *context,size_t items,size_t size)
 {
   return(AcquireCompressionMemory(context,items,size));
@@ -193,6 +198,9 @@ static void *AcquireLZMAMemory(void *context,size_t items,size_t size)
 #endif
 
 #if defined(MAGICKCORE_ZLIB_DELEGATE)
+static voidpf AcquireZIPMemory(voidpf,unsigned int,unsigned int)
+   magick_attribute((__malloc__));
+
 static voidpf AcquireZIPMemory(voidpf context,unsigned int items,
   unsigned int size)
 {
@@ -1108,11 +1116,12 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
     /*
       Verify that required image information is defined.
     */
-    if ((LocaleCompare(id,"ImageMagick") != 0) || (image->depth > 64) ||
+    if ((LocaleCompare(id,"ImageMagick") != 0) ||
         (image->storage_class == UndefinedClass) ||
         (image->compression == UndefinedCompression) ||
         (image->colorspace == UndefinedColorspace) ||
-        (image->columns == 0) || (image->rows == 0))
+        (image->columns == 0) || (image->rows == 0) ||
+        (image->depth == 0) || (image->depth > 64))
       {
         if (profiles != (LinkedListInfo *) NULL)
           profiles=DestroyLinkedList(profiles,RelinquishMagickMemory);
@@ -1325,6 +1334,8 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
     compress_extent=MagickMax(MagickMax(BZipMaxExtent(packet_size*
       image->columns),LZMAMaxExtent(packet_size*image->columns)),
       ZipMaxExtent(packet_size*image->columns));
+    if (compress_extent < (packet_size*image->columns))
+      ThrowMIFFException(ResourceLimitError,"MemoryAllocationFailed");
     compress_pixels=(unsigned char *) AcquireQuantumMemory(compress_extent,
       sizeof(*compress_pixels));
     if (compress_pixels == (unsigned char *) NULL)
@@ -2096,7 +2107,7 @@ static MagickBooleanType WriteMIFFImage(const ImageInfo *image_info,
           }
       }
     else
-      if (image->depth < 16)    
+      if (image->depth < 16)
         (void) DeleteImageProperty(image,"quantum:format");
     compression=UndefinedCompression;
     if (image_info->compression != UndefinedCompression)
@@ -2590,7 +2601,7 @@ static MagickBooleanType WriteMIFFImage(const ImageInfo *image_info,
             bzip_info.avail_out=(unsigned int) BZipMaxExtent(packet_size*
               image->columns);
             code=BZ2_bzCompress(&bzip_info,BZ_FLUSH);
-            if (code != BZ_OK)
+            if (code < 0)
               status=MagickFalse;
             length=(size_t) (bzip_info.next_out-(char *) compress_pixels);
             if (length != 0)
@@ -2615,7 +2626,7 @@ static MagickBooleanType WriteMIFFImage(const ImageInfo *image_info,
               code;
 
             lzma_info.next_out=compress_pixels;
-            lzma_info.avail_out=packet_size*image->columns;
+            lzma_info.avail_out=LZMAMaxExtent(packet_size*image->columns);
             code=lzma_code(&lzma_info,LZMA_RUN);
             if (code != LZMA_OK)
               status=MagickFalse;

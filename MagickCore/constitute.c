@@ -17,13 +17,13 @@
 %                               October 1998                                  %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
 %  obtain a copy of the License at                                            %
 %                                                                             %
-%    https://www.imagemagick.org/script/license.php                           %
+%    https://imagemagick.org/script/license.php                               %
 %                                                                             %
 %  Unless required by applicable law or agreed to in writing, software        %
 %  distributed under the License is distributed on an "AS IS" BASIS,          %
@@ -491,9 +491,6 @@ MagickExport Image *ReadImage(const ImageInfo *image_info,
   if ((magick_info != (const MagickInfo *) NULL) &&
       (GetMagickDecoderSeekableStream(magick_info) != MagickFalse))
     {
-      MagickBooleanType
-        status;
-
       image=AcquireImage(read_info,exception);
       (void) CopyMagickString(image->filename,read_info->filename,
         MagickPathExtent);
@@ -553,9 +550,6 @@ MagickExport Image *ReadImage(const ImageInfo *image_info,
     }
   else
     {
-      MagickBooleanType
-        status;
-
       delegate_info=GetDelegateInfo(read_info->magick,(char *) NULL,exception);
       if (delegate_info == (const DelegateInfo *) NULL)
         {
@@ -634,18 +628,13 @@ MagickExport Image *ReadImage(const ImageInfo *image_info,
   if (IsBlobTemporary(image) != MagickFalse)
     (void) RelinquishUniqueFileResource(read_info->filename);
   if ((IsSceneGeometry(read_info->scenes,MagickFalse) != MagickFalse) &&
-      ((GetNextImageInList(image) != (Image *) NULL) ||
-       ((read_info->scenes != (char *) NULL) &&
-        (strchr(read_info->scenes,',') != (char *) NULL))))
+      (GetImageListLength(image) != 1))
     {
       Image
         *clones;
 
       clones=CloneImages(image,read_info->scenes,exception);
-      if (clones == (Image *) NULL)
-        (void) ThrowMagickException(exception,GetMagickModule(),OptionError,
-          "SubimageSpecificationReturnsNoImages","`%s'",read_info->filename);
-      else
+      if (clones != (Image *) NULL)
         {
           image=DestroyImageList(image);
           image=GetFirstImageInList(clones);
@@ -679,9 +668,9 @@ MagickExport Image *ReadImage(const ImageInfo *image_info,
       next->magick_columns=next->columns;
     if (next->magick_rows == 0)
       next->magick_rows=next->rows;
-    value=GetImageProperty(next,"tiff:Orientation",exception);
+    value=GetImageProperty(next,"exif:Orientation",exception);
     if (value == (char *) NULL)
-      value=GetImageProperty(next,"exif:Orientation",exception);
+      value=GetImageProperty(next,"tiff:Orientation",exception);
     if (value != (char *) NULL)
       {
         next->orientation=(OrientationType) StringToLong(value);
@@ -712,9 +701,9 @@ MagickExport Image *ReadImage(const ImageInfo *image_info,
           next->resolution.y=geometry_info.rho+geometry_info.sigma/1000.0;
         (void) DeleteImageProperty(next,"exif:YResolution");
       }
-    value=GetImageProperty(next,"tiff:ResolutionUnit",exception);
+    value=GetImageProperty(next,"exif:ResolutionUnit",exception);
     if (value == (char *) NULL)
-      value=GetImageProperty(next,"exif:ResolutionUnit",exception);
+      value=GetImageProperty(next,"tiff:ResolutionUnit",exception);
     if (value != (char *) NULL)
       {
         option_type=ParseCommandOption(MagickResolutionOptions,MagickFalse,
@@ -1068,10 +1057,10 @@ MagickExport MagickBooleanType WriteImage(const ImageInfo *image_info,
   */
   assert(image_info != (ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
+  assert(image != (Image *) NULL);
   if (image->debug != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
       image_info->filename);
-  assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
   assert(exception != (ExceptionInfo *) NULL);
   sans_exception=AcquireExceptionInfo();
@@ -1391,7 +1380,11 @@ MagickExport MagickBooleanType WriteImages(const ImageInfo *image_info,
       break;
     if (number_images != 1)
       {
-        proceed=SetImageProgress(p,WriteImageTag,progress++,number_images);
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(p,WriteImageTag,progress,number_images);
         if (proceed == MagickFalse)
           break;
       }

@@ -23,7 +23,7 @@
 %  You may not use this file except in compliance with the License.  You may  %
 %  obtain a copy of the License at                                            %
 %                                                                             %
-%    https://www.imagemagick.org/script/license.php                           %
+%    https://imagemagick.org/script/license.php                               %
 %                                                                             %
 %  Unless required by applicable law or agreed to in writing, software        %
 %  distributed under the License is distributed on an "AS IS" BASIS,          %
@@ -322,7 +322,7 @@ static Image *ReadPALMImage(const ImageInfo *image_info,
     if ((bits_per_pixel != 1) && (bits_per_pixel != 2) &&
         (bits_per_pixel != 4) && (bits_per_pixel != 8) &&
         (bits_per_pixel != 16))
-      ThrowReaderException(CorruptImageError,"UnrecognizedBitsPerPixel");
+      ThrowReaderException(CorruptImageError,"UnsupportedBitsPerPixel");
     version=(size_t) ReadBlobByte(image);
     if ((version != 0) && (version != 1) && (version != 2))
       ThrowReaderException(CorruptImageError,"FileFormatVersionMismatch");

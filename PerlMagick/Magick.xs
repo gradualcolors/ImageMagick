@@ -23,13 +23,13 @@
 %                             February 1997                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
 %  obtain a copy of the License at                                            %
 %                                                                             %
-%    http://www.imagemagick.org/script/license.php                            %
+%    https://imagemagick.org/script/license.php                               %
 %                                                                             %
 %  Unless required by applicable law or agreed to in writing, software        %
 %  distributed under the License is distributed on an "AS IS" BASIS,          %
@@ -75,7 +75,7 @@ extern "C" {
 #define DegreesToRadians(x)  (MagickPI*(x)/180.0)
 #define EndOf(array)  (&array[NumberOf(array)])
 #define MagickPI  3.14159265358979323846264338327950288419716939937510
-#define MaxArguments  33
+#define MaxArguments  34
 #ifndef na
 #define na  PL_na
 #endif
@@ -288,7 +288,8 @@ static struct
       {"tile", ImageReference}, {"kerning", RealReference},
       {"interline-spacing", RealReference},
       {"interword-spacing", RealReference},
-      {"direction", MagickDirectionOptions} } },
+      {"direction", MagickDirectionOptions},
+      {"decorate", MagickDecorateOptions} } },
     { "ColorFloodfill", { {"geometry", StringReference},
       {"x", IntegerReference}, {"y", IntegerReference},
       {"fill", StringReference}, {"bordercolor", StringReference},
@@ -412,7 +413,8 @@ static struct
       {"background", StringReference} } },
     { "Difference", { {"image", ImageReference}, {"fuzz", StringReference} } },
     { "AdaptiveThreshold", { {"geometry", StringReference},
-      {"width", IntegerReference}, {"height", IntegerReference} } },
+      {"width", IntegerReference}, {"height", IntegerReference},
+      {"bias", RealReference} } },
     { "Resample", { {"density", StringReference}, {"x", RealReference},
       {"y", RealReference}, {"filter", MagickFilterOptions},
       {"support", RealReference } } },
@@ -570,6 +572,9 @@ static struct
       {"low-black", RealReference}, {"low-white", RealReference},
       {"high-white", RealReference}, {"high-black", RealReference},
       {"channel", MagickChannelOptions} } },
+    { "CLAHE", { {"geometry", StringReference}, {"width", IntegerReference},
+      {"height", IntegerReference}, {"number-bins", IntegerReference},
+      {"clip-limit", RealReference} } },
   };
 
 static SplayTreeInfo
@@ -7640,6 +7645,8 @@ Mogrify(ref,...)
     AutoThresholdImage = 294
     RangeThreshold     = 295
     RangeThresholdImage= 296
+    CLAHE              = 297
+    CLAHEImage         = 298
     MogrifyRegion      = 666
   PPCODE:
   {
@@ -8600,6 +8607,9 @@ Mogrify(ref,...)
           if (attribute_flag[32] != 0)
             draw_info->direction=(DirectionType)
               argument_list[32].integer_reference;
+          if (attribute_flag[33] != 0)
+            draw_info->decorate=(DecorationType)
+              argument_list[33].integer_reference;
           (void) AnnotateImage(image,draw_info,exception);
           draw_info=DestroyDrawInfo(draw_info);
           break;
@@ -9082,8 +9092,7 @@ Mogrify(ref,...)
             draw_info->pointsize=argument_list[16].real_reference;
           if (attribute_flag[17] != 0)
             {
-              draw_info->stroke_antialias=argument_list[17].integer_reference != 0
-                ? MagickTrue : MagickFalse;
+              draw_info->stroke_antialias=argument_list[17].integer_reference != 0 ? MagickTrue : MagickFalse;
               draw_info->text_antialias=draw_info->stroke_antialias;
             }
           if (attribute_flag[18] != 0)
@@ -9142,7 +9151,7 @@ Mogrify(ref,...)
           if (attribute_flag[32] != 0)
             draw_info->direction=(DirectionType)
               argument_list[32].integer_reference;
-          DrawImage(image,draw_info,exception);
+          (void) DrawImage(image,draw_info,exception);
           draw_info=DestroyDrawInfo(draw_info);
           break;
         }
@@ -9151,7 +9160,7 @@ Mogrify(ref,...)
           if (attribute_flag[0] != 0)
             channel=(ChannelType) argument_list[0].integer_reference;
           channel_mask=SetImageChannelMask(image,channel);
-          EqualizeImage(image,exception);
+          (void) EqualizeImage(image,exception);
           (void) SetImageChannelMask(image,channel_mask);
           break;
         }
@@ -11469,6 +11478,27 @@ Mogrify(ref,...)
             geometry_info.sigma,geometry_info.xi,geometry_info.psi,exception);
           if (image != (Image *) NULL)
             (void) SetImageChannelMask(image,channel_mask);
+          break;
+        }
+        case 149:  /* CLAHE */
+        {
+          if (attribute_flag[0] != 0)
+            {
+              flags=ParseGeometry(argument_list[0].string_reference,
+                &geometry_info);
+              flags=ParseRegionGeometry(image,argument_list[0].string_reference,
+                &geometry,exception);
+            }
+          if (attribute_flag[1] != 0)
+            geometry.width=argument_list[1].integer_reference;
+          if (attribute_flag[2] != 0)
+            geometry.height=argument_list[2].integer_reference;
+          if (attribute_flag[3] != 0)
+            geometry.x=argument_list[3].integer_reference;
+          if (attribute_flag[4] != 0)
+            geometry_info.psi=argument_list[4].real_reference;
+          (void) CLAHEImage(image,geometry.width,geometry.height,geometry.x,
+            geometry_info.psi,exception);
           break;
         }
       }

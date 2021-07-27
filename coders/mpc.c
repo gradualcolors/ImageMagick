@@ -17,13 +17,13 @@
 %                                 March 2000                                  %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
 %  obtain a copy of the License at                                            %
 %                                                                             %
-%    https://www.imagemagick.org/script/license.php                           %
+%    https://imagemagick.org/script/license.php                               %
 %                                                                             %
 %  Unless required by applicable law or agreed to in writing, software        %
 %  distributed under the License is distributed on an "AS IS" BASIS,          %
@@ -782,13 +782,14 @@ static Image *ReadMPCImage(const ImageInfo *image_info,ExceptionInfo *exception)
     /*
       Verify that required image information is defined.
     */
-    if ((LocaleCompare(id,"MagickCache") != 0) || (image->depth > 128) ||
+    if ((LocaleCompare(id,"MagickCache") != 0) ||
         (image->storage_class == UndefinedClass) ||
         (image->compression == UndefinedCompression) ||
         (image->columns == 0) || (image->rows == 0) ||
         (image->number_channels > MaxPixelChannels) ||
         (image->number_meta_channels > (MaxPixelChannels-8)) ||
-        ((image->number_channels+image->number_meta_channels) >= MaxPixelChannels))
+        ((image->number_channels+image->number_meta_channels) >= MaxPixelChannels) ||
+        (image->depth == 0) || (image->depth > 64))
       {
         if (profiles != (LinkedListInfo *) NULL)
           profiles=DestroyLinkedList(profiles,RelinquishMagickMemory);
